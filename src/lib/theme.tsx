@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useStore } from '../lib/store';
 import { ThemeMode, ACCENT_COLORS, AccentColor, FontSize } from '../lib/types';
 
@@ -20,61 +20,53 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const { settings, updateSettings } = useStore();
-  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
+  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    const html = document.documentElement;
+  // Apply theme to DOM
+  const applyTheme = useCallback((theme: ThemeMode) => {
+    const isDark = theme === 'dark' || 
+      (theme === 'system' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches);
     
-    const applyTheme = () => {
-      let isDark = false;
-      
-      if (settings.theme === 'system') {
-        isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      } else {
-        isDark = settings.theme === 'dark';
-      }
-      
-      if (isDark) {
-        html.classList.add('dark');
-      } else {
-        html.classList.remove('dark');
-      }
-      setResolvedTheme(isDark ? 'dark' : 'light');
-    };
-
-    applyTheme();
-
-    if (settings.theme === 'system') {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const handler = () => applyTheme();
-      mediaQuery.addEventListener('change', handler);
-      return () => mediaQuery.removeEventListener('change', handler);
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
     }
-  }, [settings.theme]);
+  }, []);
 
+  // Mount effect
+  useEffect(() => {
+    setMounted(true);
+    applyTheme(settings.theme);
+  }, [settings.theme, applyTheme]);
+
+  // Apply accent color
   useEffect(() => {
     const root = document.documentElement;
     const color = ACCENT_COLORS[settings.accentColor];
     root.style.setProperty('--accent', color);
-    root.style.setProperty('--accent-foreground', '#ffffff');
   }, [settings.accentColor]);
 
+  // Apply font size
   useEffect(() => {
     const root = document.documentElement;
-    const fontSize = FONT_SIZES[settings.fontSize];
-    root.style.setProperty('--font-size-base', fontSize);
-    document.body.style.fontSize = fontSize;
+    root.style.setProperty('--font-size-base', FONT_SIZES[settings.fontSize]);
   }, [settings.fontSize]);
 
-  const setTheme = (theme: ThemeMode) => {
+  const setTheme = useCallback((theme: ThemeMode) => {
+    applyTheme(theme);
     updateSettings({ theme });
-  };
+  }, [applyTheme, updateSettings]);
 
-  const setAccentColor = (color: AccentColor) => {
+  const setAccentColor = useCallback((color: AccentColor) => {
     updateSettings({ accentColor: color });
-  };
+  }, [updateSettings]);
+
+  const resolvedTheme = settings.theme === 'system' 
+    ? (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    : settings.theme;
 
   return (
     <ThemeContext.Provider
