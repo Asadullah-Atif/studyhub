@@ -23,17 +23,11 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const { settings, updateSettings } = useStore();
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
+    const html = document.documentElement;
     
     const applyTheme = () => {
-      const html = document.documentElement;
       let isDark = false;
       
       if (settings.theme === 'system') {
@@ -44,12 +38,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       
       if (isDark) {
         html.classList.add('dark');
-        document.body.style.backgroundColor = '#030712';
-        document.body.style.color = '#f9fafb';
       } else {
         html.classList.remove('dark');
-        document.body.style.backgroundColor = '#f9fafb';
-        document.body.style.color = '#111827';
       }
       setResolvedTheme(isDark ? 'dark' : 'light');
     };
@@ -62,23 +52,21 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       mediaQuery.addEventListener('change', handler);
       return () => mediaQuery.removeEventListener('change', handler);
     }
-  }, [settings.theme, mounted]);
+  }, [settings.theme]);
 
   useEffect(() => {
-    if (!mounted) return;
     const root = document.documentElement;
     const color = ACCENT_COLORS[settings.accentColor];
     root.style.setProperty('--accent', color);
     root.style.setProperty('--accent-foreground', '#ffffff');
-  }, [settings.accentColor, mounted]);
+  }, [settings.accentColor]);
 
   useEffect(() => {
-    if (!mounted) return;
     const root = document.documentElement;
     const fontSize = FONT_SIZES[settings.fontSize];
     root.style.setProperty('--font-size-base', fontSize);
     document.body.style.fontSize = fontSize;
-  }, [settings.fontSize, mounted]);
+  }, [settings.fontSize]);
 
   const setTheme = (theme: ThemeMode) => {
     updateSettings({ theme });
