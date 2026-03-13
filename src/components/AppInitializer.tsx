@@ -8,7 +8,7 @@ import { Sidebar } from '@/components/Sidebar';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 
 export function AppInitializer({ children }: { children: React.ReactNode }) {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isDemoMode } = useAuth();
   const { initialize, initialized } = useStore();
   const router = useRouter();
   const [isClient, setIsClient] = useState(false);
@@ -18,10 +18,12 @@ export function AppInitializer({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (user && !initialized) {
+    if (isDemoMode) {
+      initialize('demo-user');
+    } else if (user && !initialized) {
       initialize(user.id);
     }
-  }, [user, initialized, initialize]);
+  }, [user, initialized, initialize, isDemoMode]);
 
   if (!isClient || authLoading) {
     return (
@@ -34,7 +36,7 @@ export function AppInitializer({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user) {
+  if (!isDemoMode && !user) {
     router.push('/login');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">

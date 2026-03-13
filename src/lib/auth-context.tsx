@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { supabase } from './supabase';
+import { isSupabaseConfigured, getSupabase } from './supabase';
 import { User } from '@supabase/supabase-js';
 
 interface AuthContextType {
@@ -9,6 +9,7 @@ interface AuthContextType {
   loading: boolean;
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
+  isDemoMode: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -16,8 +17,17 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
   useEffect(() => {
+    if (!isSupabaseConfigured()) {
+      setIsDemoMode(true);
+      setLoading(false);
+      return;
+    }
+
+    const supabase = getSupabase();
+    
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
@@ -31,6 +41,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async () => {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Please configure Supabase to enable authentication');
+    }
+    const supabase = getSupabase();
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -40,11 +54,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    if (isSupabaseConfigured()) {
+      const supabase = getSupabase();
+      await supabase.auth.signOut();
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signOut, isDemoMode }}>
       {children}
     </AuthContext.Provider>
   );

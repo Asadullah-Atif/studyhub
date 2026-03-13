@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { supabase } from './supabase';
+import { persist } from 'zustand/middleware';
+import { getSupabase, isSupabaseConfigured } from './supabase';
 import {
   Subject, Exam, StudySession, Task, PomodoroSession, Grade,
   FlashcardDeck, Note, Habit, Resource, Goal, SleepLog, TimetableEntry,
@@ -145,6 +146,15 @@ export const useStore = create<AppState>()((set, get) => ({
   initialize: async (userId: string) => {
     set({ loading: true, userId });
     
+    if (!isSupabaseConfigured()) {
+      set({
+        loading: false,
+        initialized: true,
+      });
+      return;
+    }
+    
+    try {
     const [
       { data: subjects },
       { data: exams },
@@ -163,22 +173,22 @@ export const useStore = create<AppState>()((set, get) => ({
       { data: activities },
       { data: settings }
     ] = await Promise.all([
-      supabase.from('subjects').select('*').eq('user_id', userId),
-      supabase.from('exams').select('*').eq('user_id', userId),
-      supabase.from('study_sessions').select('*').eq('user_id', userId),
-      supabase.from('tasks').select('*').eq('user_id', userId),
-      supabase.from('pomodoro_sessions').select('*').eq('user_id', userId),
-      supabase.from('grades').select('*').eq('user_id', userId),
-      supabase.from('flashcard_decks').select('*').eq('user_id', userId),
-      supabase.from('notes').select('*').eq('user_id', userId),
-      supabase.from('habits').select('*').eq('user_id', userId),
-      supabase.from('resources').select('*').eq('user_id', userId),
-      supabase.from('goals').select('*').eq('user_id', userId),
-      supabase.from('sleep_logs').select('*').eq('user_id', userId),
-      supabase.from('timetable_entries').select('*').eq('user_id', userId),
-      supabase.from('chat_history').select('*').eq('user_id', userId).order('timestamp', { ascending: true }),
-      supabase.from('activities').select('*').eq('user_id', userId).order('timestamp', { ascending: false }).limit(50),
-      supabase.from('settings').select('*').eq('user_id', userId).single(),
+      getSupabase().from('subjects').select('*').eq('user_id', userId),
+      getSupabase().from('exams').select('*').eq('user_id', userId),
+      getSupabase().from('study_sessions').select('*').eq('user_id', userId),
+      getSupabase().from('tasks').select('*').eq('user_id', userId),
+      getSupabase().from('pomodoro_sessions').select('*').eq('user_id', userId),
+      getSupabase().from('grades').select('*').eq('user_id', userId),
+      getSupabase().from('flashcard_decks').select('*').eq('user_id', userId),
+      getSupabase().from('notes').select('*').eq('user_id', userId),
+      getSupabase().from('habits').select('*').eq('user_id', userId),
+      getSupabase().from('resources').select('*').eq('user_id', userId),
+      getSupabase().from('goals').select('*').eq('user_id', userId),
+      getSupabase().from('sleep_logs').select('*').eq('user_id', userId),
+      getSupabase().from('timetable_entries').select('*').eq('user_id', userId),
+      getSupabase().from('chat_history').select('*').eq('user_id', userId).order('timestamp', { ascending: true }),
+      getSupabase().from('activities').select('*').eq('user_id', userId).order('timestamp', { ascending: false }).limit(50),
+      getSupabase().from('settings').select('*').eq('user_id', userId).single(),
     ]);
 
     set({
@@ -344,12 +354,19 @@ export const useStore = create<AppState>()((set, get) => ({
       loading: false,
       initialized: true,
     });
+    } catch (error) {
+      console.error('Failed to load from Supabase:', error);
+      set({
+        loading: false,
+        initialized: true,
+      });
+    }
   },
 
   addSubject: async (subject) => {
     const userId = get().userId || '';
     const subjectWithUserId = { ...subject, userId };
-    const { error } = await supabase.from('subjects').insert({
+    const { error } = await getSupabase().from('subjects').insert({
       id: subject.id,
       user_id: userId,
       name: subject.name,
@@ -374,7 +391,7 @@ export const useStore = create<AppState>()((set, get) => ({
     if (subject.credits !== undefined) updateData.credits = subject.credits;
     if (subject.room !== undefined) updateData.room = subject.room;
 
-    const { error } = await supabase.from('subjects').update(updateData).eq('id', id);
+    const { error } = await getSupabase().from('subjects').update(updateData).eq('id', id);
     if (!error) {
       set((state) => ({
         subjects: state.subjects.map((s) => s.id === id ? { ...s, ...subject } : s)
@@ -383,14 +400,14 @@ export const useStore = create<AppState>()((set, get) => ({
   },
 
   deleteSubject: async (id) => {
-    const { error } = await supabase.from('subjects').delete().eq('id', id);
+    const { error } = await getSupabase().from('subjects').delete().eq('id', id);
     if (!error) {
       set((state) => ({ subjects: state.subjects.filter((s) => s.id !== id) }));
     }
   },
 
   addExam: async (exam) => {
-    const { error } = await supabase.from('exams').insert({
+    const { error } = await getSupabase().from('exams').insert({
       id: exam.id,
       user_id: get().userId,
       subject_id: exam.subjectId,
@@ -425,21 +442,21 @@ export const useStore = create<AppState>()((set, get) => ({
     if (exam.reminderDays !== undefined) updateData.reminder_days = exam.reminderDays;
     if (exam.difficulty !== undefined) updateData.difficulty = exam.difficulty;
 
-    const { error } = await supabase.from('exams').update(updateData).eq('id', id);
+    const { error } = await getSupabase().from('exams').update(updateData).eq('id', id);
     if (!error) {
       set((state) => ({ exams: state.exams.map((e) => e.id === id ? { ...e, ...exam } : e) }));
     }
   },
 
   deleteExam: async (id) => {
-    const { error } = await supabase.from('exams').delete().eq('id', id);
+    const { error } = await getSupabase().from('exams').delete().eq('id', id);
     if (!error) {
       set((state) => ({ exams: state.exams.filter((e) => e.id !== id) }));
     }
   },
 
   addStudySession: async (session) => {
-    const { error } = await supabase.from('study_sessions').insert({
+    const { error } = await getSupabase().from('study_sessions').insert({
       id: session.id,
       user_id: get().userId,
       subject_id: session.subjectId,
@@ -464,21 +481,21 @@ export const useStore = create<AppState>()((set, get) => ({
     if (session.notes !== undefined) updateData.notes = session.notes;
     if (session.completed !== undefined) updateData.completed = session.completed;
 
-    const { error } = await supabase.from('study_sessions').update(updateData).eq('id', id);
+    const { error } = await getSupabase().from('study_sessions').update(updateData).eq('id', id);
     if (!error) {
       set((state) => ({ studySessions: state.studySessions.map((s) => s.id === id ? { ...s, ...session } : s) }));
     }
   },
 
   deleteStudySession: async (id) => {
-    const { error } = await supabase.from('study_sessions').delete().eq('id', id);
+    const { error } = await getSupabase().from('study_sessions').delete().eq('id', id);
     if (!error) {
       set((state) => ({ studySessions: state.studySessions.filter((s) => s.id !== id) }));
     }
   },
 
   addTask: async (task) => {
-    const { error } = await supabase.from('tasks').insert({
+    const { error } = await getSupabase().from('tasks').insert({
       id: task.id,
       user_id: get().userId,
       title: task.title,
@@ -505,21 +522,21 @@ export const useStore = create<AppState>()((set, get) => ({
     if (task.subtasks !== undefined) updateData.subtasks = task.subtasks;
     if (task.recurring !== undefined) updateData.recurring = task.recurring;
 
-    const { error } = await supabase.from('tasks').update(updateData).eq('id', id);
+    const { error } = await getSupabase().from('tasks').update(updateData).eq('id', id);
     if (!error) {
       set((state) => ({ tasks: state.tasks.map((t) => t.id === id ? { ...t, ...task } : t) }));
     }
   },
 
   deleteTask: async (id) => {
-    const { error } = await supabase.from('tasks').delete().eq('id', id);
+    const { error } = await getSupabase().from('tasks').delete().eq('id', id);
     if (!error) {
       set((state) => ({ tasks: state.tasks.filter((t) => t.id !== id) }));
     }
   },
 
   addPomodoroSession: async (session) => {
-    const { error } = await supabase.from('pomodoro_sessions').insert({
+    const { error } = await getSupabase().from('pomodoro_sessions').insert({
       id: session.id,
       user_id: get().userId,
       subject_id: session.subjectId,
@@ -533,7 +550,7 @@ export const useStore = create<AppState>()((set, get) => ({
   },
 
   addGrade: async (grade) => {
-    const { error } = await supabase.from('grades').insert({
+    const { error } = await getSupabase().from('grades').insert({
       id: grade.id,
       user_id: get().userId,
       subject_id: grade.subjectId,
@@ -560,21 +577,21 @@ export const useStore = create<AppState>()((set, get) => ({
     if (grade.date !== undefined) updateData.date = grade.date;
     if (grade.semester !== undefined) updateData.semester = grade.semester;
 
-    const { error } = await supabase.from('grades').update(updateData).eq('id', id);
+    const { error } = await getSupabase().from('grades').update(updateData).eq('id', id);
     if (!error) {
       set((state) => ({ grades: state.grades.map((g) => g.id === id ? { ...g, ...grade } : g) }));
     }
   },
 
   deleteGrade: async (id) => {
-    const { error } = await supabase.from('grades').delete().eq('id', id);
+    const { error } = await getSupabase().from('grades').delete().eq('id', id);
     if (!error) {
       set((state) => ({ grades: state.grades.filter((g) => g.id !== id) }));
     }
   },
 
   addFlashcardDeck: async (deck) => {
-    const { error } = await supabase.from('flashcard_decks').insert({
+    const { error } = await getSupabase().from('flashcard_decks').insert({
       id: deck.id,
       user_id: get().userId,
       subject_id: deck.subjectId,
@@ -595,21 +612,21 @@ export const useStore = create<AppState>()((set, get) => ({
     if (deck.description !== undefined) updateData.description = deck.description;
     if (deck.cards !== undefined) updateData.cards = deck.cards;
 
-    const { error } = await supabase.from('flashcard_decks').update(updateData).eq('id', id);
+    const { error } = await getSupabase().from('flashcard_decks').update(updateData).eq('id', id);
     if (!error) {
       set((state) => ({ flashcardDecks: state.flashcardDecks.map((d) => d.id === id ? { ...d, ...deck } : d) }));
     }
   },
 
   deleteFlashcardDeck: async (id) => {
-    const { error } = await supabase.from('flashcard_decks').delete().eq('id', id);
+    const { error } = await getSupabase().from('flashcard_decks').delete().eq('id', id);
     if (!error) {
       set((state) => ({ flashcardDecks: state.flashcardDecks.filter((d) => d.id !== id) }));
     }
   },
 
   addNote: async (note) => {
-    const { error } = await supabase.from('notes').insert({
+    const { error } = await getSupabase().from('notes').insert({
       id: note.id,
       user_id: get().userId,
       subject_id: note.subjectId,
@@ -638,21 +655,21 @@ export const useStore = create<AppState>()((set, get) => ({
     if (note.wordCount !== undefined) updateData.word_count = note.wordCount;
     if (note.updatedAt !== undefined) updateData.updated_at = note.updatedAt;
 
-    const { error } = await supabase.from('notes').update(updateData).eq('id', id);
+    const { error } = await getSupabase().from('notes').update(updateData).eq('id', id);
     if (!error) {
       set((state) => ({ notes: state.notes.map((n) => n.id === id ? { ...n, ...note } : n) }));
     }
   },
 
   deleteNote: async (id) => {
-    const { error } = await supabase.from('notes').delete().eq('id', id);
+    const { error } = await getSupabase().from('notes').delete().eq('id', id);
     if (!error) {
       set((state) => ({ notes: state.notes.filter((n) => n.id !== id) }));
     }
   },
 
   addHabit: async (habit) => {
-    const { error } = await supabase.from('habits').insert({
+    const { error } = await getSupabase().from('habits').insert({
       id: habit.id,
       user_id: get().userId,
       title: habit.title,
@@ -675,21 +692,21 @@ export const useStore = create<AppState>()((set, get) => ({
     if (habit.targetDays !== undefined) updateData.target_days = habit.targetDays;
     if (habit.completedDates !== undefined) updateData.completed_dates = habit.completedDates;
 
-    const { error } = await supabase.from('habits').update(updateData).eq('id', id);
+    const { error } = await getSupabase().from('habits').update(updateData).eq('id', id);
     if (!error) {
       set((state) => ({ habits: state.habits.map((h) => h.id === id ? { ...h, ...habit } : h) }));
     }
   },
 
   deleteHabit: async (id) => {
-    const { error } = await supabase.from('habits').delete().eq('id', id);
+    const { error } = await getSupabase().from('habits').delete().eq('id', id);
     if (!error) {
       set((state) => ({ habits: state.habits.filter((h) => h.id !== id) }));
     }
   },
 
   addResource: async (resource) => {
-    const { error } = await supabase.from('resources').insert({
+    const { error } = await getSupabase().from('resources').insert({
       id: resource.id,
       user_id: get().userId,
       subject_id: resource.subjectId,
@@ -712,21 +729,21 @@ export const useStore = create<AppState>()((set, get) => ({
     if (resource.url !== undefined) updateData.url = resource.url;
     if (resource.status !== undefined) updateData.status = resource.status;
 
-    const { error } = await supabase.from('resources').update(updateData).eq('id', id);
+    const { error } = await getSupabase().from('resources').update(updateData).eq('id', id);
     if (!error) {
       set((state) => ({ resources: state.resources.map((r) => r.id === id ? { ...r, ...resource } : r) }));
     }
   },
 
   deleteResource: async (id) => {
-    const { error } = await supabase.from('resources').delete().eq('id', id);
+    const { error } = await getSupabase().from('resources').delete().eq('id', id);
     if (!error) {
       set((state) => ({ resources: state.resources.filter((r) => r.id !== id) }));
     }
   },
 
   addGoal: async (goal) => {
-    const { error } = await supabase.from('goals').insert({
+    const { error } = await getSupabase().from('goals').insert({
       id: goal.id,
       user_id: get().userId,
       title: goal.title,
@@ -753,21 +770,21 @@ export const useStore = create<AppState>()((set, get) => ({
     if (goal.milestones !== undefined) updateData.milestones = goal.milestones;
     if (goal.achieved !== undefined) updateData.achieved = goal.achieved;
 
-    const { error } = await supabase.from('goals').update(updateData).eq('id', id);
+    const { error } = await getSupabase().from('goals').update(updateData).eq('id', id);
     if (!error) {
       set((state) => ({ goals: state.goals.map((g) => g.id === id ? { ...g, ...goal } : g) }));
     }
   },
 
   deleteGoal: async (id) => {
-    const { error } = await supabase.from('goals').delete().eq('id', id);
+    const { error } = await getSupabase().from('goals').delete().eq('id', id);
     if (!error) {
       set((state) => ({ goals: state.goals.filter((g) => g.id !== id) }));
     }
   },
 
   addSleepLog: async (log) => {
-    const { error } = await supabase.from('sleep_logs').insert({
+    const { error } = await getSupabase().from('sleep_logs').insert({
       id: log.id,
       user_id: get().userId,
       date: log.date,
@@ -786,14 +803,14 @@ export const useStore = create<AppState>()((set, get) => ({
     if (log.hours !== undefined) updateData.hours = log.hours;
     if (log.energy !== undefined) updateData.energy = log.energy;
 
-    const { error } = await supabase.from('sleep_logs').update(updateData).eq('id', id);
+    const { error } = await getSupabase().from('sleep_logs').update(updateData).eq('id', id);
     if (!error) {
       set((state) => ({ sleepLogs: state.sleepLogs.map((s) => s.id === id ? { ...s, ...log } : s) }));
     }
   },
 
   addTimetableEntry: async (entry) => {
-    const { error } = await supabase.from('timetable_entries').insert({
+    const { error } = await getSupabase().from('timetable_entries').insert({
       id: entry.id,
       user_id: get().userId,
       subject_id: entry.subjectId,
@@ -818,21 +835,21 @@ export const useStore = create<AppState>()((set, get) => ({
     if (entry.room !== undefined) updateData.room = entry.room;
     if (entry.teacher !== undefined) updateData.teacher = entry.teacher;
 
-    const { error } = await supabase.from('timetable_entries').update(updateData).eq('id', id);
+    const { error } = await getSupabase().from('timetable_entries').update(updateData).eq('id', id);
     if (!error) {
       set((state) => ({ timetable: state.timetable.map((t) => t.id === id ? { ...t, ...entry } : t) }));
     }
   },
 
   deleteTimetableEntry: async (id) => {
-    const { error } = await supabase.from('timetable_entries').delete().eq('id', id);
+    const { error } = await getSupabase().from('timetable_entries').delete().eq('id', id);
     if (!error) {
       set((state) => ({ timetable: state.timetable.filter((t) => t.id !== id) }));
     }
   },
 
   addChatMessage: async (message) => {
-    const { error } = await supabase.from('chat_history').insert({
+    const { error } = await getSupabase().from('chat_history').insert({
       id: message.id,
       user_id: get().userId,
       role: message.role,
@@ -845,14 +862,14 @@ export const useStore = create<AppState>()((set, get) => ({
   },
 
   clearChatHistory: async () => {
-    const { error } = await supabase.from('chat_history').delete().neq('id', '');
+    const { error } = await getSupabase().from('chat_history').delete().neq('id', '');
     if (!error) {
       set({ chatHistory: [] });
     }
   },
 
   addActivity: async (activity) => {
-    const { error } = await supabase.from('activities').insert({
+    const { error } = await getSupabase().from('activities').insert({
       id: activity.id,
       user_id: get().userId,
       type: activity.type,
@@ -884,7 +901,7 @@ export const useStore = create<AppState>()((set, get) => ({
       updated_at: new Date().toISOString(),
     };
 
-    const { error } = await supabase.from('settings').update(updateData).eq('user_id', userId);
+    const { error } = await getSupabase().from('settings').update(updateData).eq('user_id', userId);
     if (!error) {
       set({ settings: updatedSettings });
     }
@@ -1030,14 +1047,14 @@ export const useStore = create<AppState>()((set, get) => ({
 
       for (const table of tables) {
         if (table.data.length > 0) {
-          await supabase.from(table.name).delete().eq('user_id', userId);
+          await getSupabase().from(table.name).delete().eq('user_id', userId);
           
           const insertData = table.data.map((item: any) => ({
             ...item,
             user_id: userId,
           }));
           
-          await supabase.from(table.name).insert(insertData);
+          await getSupabase().from(table.name).insert(insertData);
         }
       }
 
@@ -1059,7 +1076,7 @@ export const useStore = create<AppState>()((set, get) => ({
     ];
 
     for (const table of tables) {
-      await supabase.from(table).delete().eq('user_id', userId);
+      await getSupabase().from(table).delete().eq('user_id', userId);
     }
 
     set({
