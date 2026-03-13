@@ -2,7 +2,13 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useStore } from '../lib/store';
-import { ThemeMode, ACCENT_COLORS, AccentColor } from '../lib/types';
+import { ThemeMode, ACCENT_COLORS, AccentColor, FontSize } from '../lib/types';
+
+const FONT_SIZES: Record<FontSize, string> = {
+  small: '14px',
+  medium: '16px',
+  large: '18px',
+};
 
 interface ThemeContextType {
   theme: ThemeMode;
@@ -48,6 +54,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     root.style.setProperty('--accent', color);
     root.style.setProperty('--accent-foreground', '#ffffff');
   }, [settings.accentColor]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const fontSize = FONT_SIZES[settings.fontSize];
+    root.style.setProperty('--font-size-base', fontSize);
+    document.body.style.fontSize = fontSize;
+  }, [settings.fontSize]);
 
   const setTheme = (theme: ThemeMode) => {
     updateSettings({ theme });

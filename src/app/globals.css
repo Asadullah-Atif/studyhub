@@ -26,6 +26,7 @@
 
 html {
   scroll-behavior: smooth;
+  font-size: var(--font-size-base, 16px);
 }
 
 body {
