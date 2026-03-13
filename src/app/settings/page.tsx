@@ -61,9 +61,9 @@ export default function SettingsPage() {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       const content = e.target?.result as string;
-      const success = importData(content);
+      const success = await importData(content);
       if (success) {
         showToast('success', 'Data imported successfully');
       } else {
@@ -73,8 +73,8 @@ export default function SettingsPage() {
     reader.readAsText(file);
   };
 
-  const handleReset = () => {
-    resetAllData();
+  const handleReset = async () => {
+    await resetAllData();
     setShowResetConfirm(false);
     showToast('success', 'All data has been reset');
   };

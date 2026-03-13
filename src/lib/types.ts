@@ -9,6 +9,7 @@ export type AccentColor = 'blue' | 'purple' | 'green' | 'orange' | 'pink' | 'red
 
 export interface Subject {
   id: string;
+  userId?: string;
   name: string;
   color: string;
   icon: string;
@@ -20,6 +21,7 @@ export interface Subject {
 
 export interface Exam {
   id: string;
+  userId?: string;
   subjectId: string;
   title: string;
   date: string;
@@ -36,6 +38,7 @@ export interface Exam {
 
 export interface StudySession {
   id: string;
+  userId?: string;
   subjectId: string;
   title: string;
   date: string;
@@ -47,6 +50,7 @@ export interface StudySession {
 
 export interface Task {
   id: string;
+  userId?: string;
   title: string;
   dueDate?: string;
   subjectId?: string;
@@ -65,6 +69,7 @@ export interface Subtask {
 
 export interface PomodoroSession {
   id: string;
+  userId?: string;
   subjectId?: string;
   duration: number;
   type: 'study' | 'short-break' | 'long-break';
@@ -73,6 +78,7 @@ export interface PomodoroSession {
 
 export interface Grade {
   id: string;
+  userId?: string;
   subjectId: string;
   title: string;
   score: number;
@@ -85,6 +91,7 @@ export interface Grade {
 
 export interface FlashcardDeck {
   id: string;
+  userId?: string;
   subjectId: string;
   title: string;
   description?: string;
@@ -102,6 +109,7 @@ export interface Flashcard {
 
 export interface Note {
   id: string;
+  userId?: string;
   subjectId?: string;
   title: string;
   content: string;
@@ -115,6 +123,7 @@ export interface Note {
 
 export interface Habit {
   id: string;
+  userId?: string;
   title: string;
   subjectId?: string;
   frequency: HabitFrequency;
@@ -125,6 +134,7 @@ export interface Habit {
 
 export interface Resource {
   id: string;
+  userId?: string;
   subjectId: string;
   title: string;
   type: 'link' | 'book' | 'video' | 'pdf';
@@ -135,6 +145,7 @@ export interface Resource {
 
 export interface Goal {
   id: string;
+  userId?: string;
   title: string;
   description?: string;
   subjectId?: string;
@@ -154,6 +165,7 @@ export interface Milestone {
 
 export interface SleepLog {
   id: string;
+  userId?: string;
   date: string;
   hours: number;
   energy: number;
@@ -162,6 +174,7 @@ export interface SleepLog {
 
 export interface TimetableEntry {
   id: string;
+  userId?: string;
   subjectId: string;
   dayOfWeek: number;
   startTime: string;
@@ -173,12 +186,14 @@ export interface TimetableEntry {
 
 export interface ChatMessage {
   id: string;
+  userId?: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: string;
 }
 
 export interface AppSettings {
+  userId?: string;
   theme: ThemeMode;
   accentColor: AccentColor;
   fontSize: FontSize;
@@ -190,6 +205,7 @@ export interface AppSettings {
 
 export interface Activity {
   id: string;
+  userId?: string;
   type: 'task' | 'exam' | 'session' | 'grade' | 'habit';
   action: string;
   description: string;
