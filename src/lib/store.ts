@@ -95,7 +95,7 @@ interface AppState {
 
 const defaultSettings: AppSettings = {
   theme: 'system',
-  accentColor: 'blue',
+  accentColor: 'orange',
   fontSize: 'medium',
   notifications: true,
   pomodoroWork: 25,

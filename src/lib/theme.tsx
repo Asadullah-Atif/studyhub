@@ -47,6 +47,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const root = document.documentElement;
     const color = ACCENT_COLORS[settings.accentColor];
     root.style.setProperty('--accent', color);
+    root.style.setProperty('--accent-foreground', '#ffffff');
   }, [settings.accentColor]);
 
   // Apply font size
