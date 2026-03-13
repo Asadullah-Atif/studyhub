@@ -33,7 +33,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     if (!mounted) return;
     
     const applyTheme = () => {
-      const root = document.documentElement;
+      const html = document.documentElement;
       let isDark = false;
       
       if (settings.theme === 'system') {
@@ -43,9 +43,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       }
       
       if (isDark) {
-        root.classList.add('dark');
+        html.classList.add('dark');
+        document.body.style.backgroundColor = '#030712';
+        document.body.style.color = '#f9fafb';
       } else {
-        root.classList.remove('dark');
+        html.classList.remove('dark');
+        document.body.style.backgroundColor = '#f9fafb';
+        document.body.style.color = '#111827';
       }
       setResolvedTheme(isDark ? 'dark' : 'light');
     };
@@ -75,26 +79,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     root.style.setProperty('--font-size-base', fontSize);
     document.body.style.fontSize = fontSize;
   }, [settings.fontSize, mounted]);
-
-  // Apply theme immediately on mount
-  useEffect(() => {
-    if (!mounted) return;
-    const root = document.documentElement;
-    let isDark = false;
-    
-    if (settings.theme === 'system') {
-      isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    } else {
-      isDark = settings.theme === 'dark';
-    }
-    
-    if (isDark) {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-    setResolvedTheme(isDark ? 'dark' : 'light');
-  }, [mounted]);
 
   const setTheme = (theme: ThemeMode) => {
     updateSettings({ theme });
