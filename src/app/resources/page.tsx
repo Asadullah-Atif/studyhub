@@ -110,7 +110,7 @@ export default function ResourcesPage() {
   const getSubjectColor = (id: string) => subjects.find(s => s.id === id)?.color || '#6B7280';
 
   const getStatusBadge = (status: ResourceStatus) => {
-    const variants = {
+    const variants: Record<ResourceStatus, 'warning' | 'info' | 'success'> = {
       'to-read': 'warning',
       'in-progress': 'info',
       'done': 'success',

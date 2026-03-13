@@ -277,7 +277,7 @@ export default function GradesPage() {
             onChange={setSelectedSemester}
             options={[
               { value: 'all', label: 'All Semesters' },
-              ...semesters.map(s => ({ value: s, label: s }))
+              ...semesters.filter((s): s is string => !!s).map((s) => ({ value: s, label: s }))
             ]}
             className="w-40"
           />

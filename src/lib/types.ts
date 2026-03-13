@@ -168,6 +168,7 @@ export interface TimetableEntry {
   endTime: string;
   room?: string;
   teacher?: string;
+  createdAt: string;
 }
 
 export interface ChatMessage {
