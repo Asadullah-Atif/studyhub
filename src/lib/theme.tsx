@@ -31,9 +31,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!mounted) return;
-    const root = document.documentElement;
     
-    const applyTheme = (isDark: boolean) => {
+    const applyTheme = () => {
+      const root = document.documentElement;
+      let isDark = false;
+      
+      if (settings.theme === 'system') {
+        isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      } else {
+        isDark = settings.theme === 'dark';
+      }
+      
       if (isDark) {
         root.classList.add('dark');
       } else {
@@ -42,15 +50,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       setResolvedTheme(isDark ? 'dark' : 'light');
     };
 
+    applyTheme();
+
     if (settings.theme === 'system') {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      applyTheme(mediaQuery.matches);
-
-      const handler = (e: MediaQueryListEvent) => applyTheme(e.matches);
+      const handler = () => applyTheme();
       mediaQuery.addEventListener('change', handler);
       return () => mediaQuery.removeEventListener('change', handler);
-    } else {
-      applyTheme(settings.theme === 'dark');
     }
   }, [settings.theme, mounted]);
 
@@ -69,6 +75,26 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     root.style.setProperty('--font-size-base', fontSize);
     document.body.style.fontSize = fontSize;
   }, [settings.fontSize, mounted]);
+
+  // Apply theme immediately on mount
+  useEffect(() => {
+    if (!mounted) return;
+    const root = document.documentElement;
+    let isDark = false;
+    
+    if (settings.theme === 'system') {
+      isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    } else {
+      isDark = settings.theme === 'dark';
+    }
+    
+    if (isDark) {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    setResolvedTheme(isDark ? 'dark' : 'light');
+  }, [mounted]);
 
   const setTheme = (theme: ThemeMode) => {
     updateSettings({ theme });
