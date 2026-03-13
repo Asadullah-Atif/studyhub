@@ -23,8 +23,14 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const { settings, updateSettings } = useStore();
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
     const root = document.documentElement;
     
     const applyTheme = (isDark: boolean) => {
@@ -46,21 +52,23 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     } else {
       applyTheme(settings.theme === 'dark');
     }
-  }, [settings.theme]);
+  }, [settings.theme, mounted]);
 
   useEffect(() => {
+    if (!mounted) return;
     const root = document.documentElement;
     const color = ACCENT_COLORS[settings.accentColor];
     root.style.setProperty('--accent', color);
     root.style.setProperty('--accent-foreground', '#ffffff');
-  }, [settings.accentColor]);
+  }, [settings.accentColor, mounted]);
 
   useEffect(() => {
+    if (!mounted) return;
     const root = document.documentElement;
     const fontSize = FONT_SIZES[settings.fontSize];
     root.style.setProperty('--font-size-base', fontSize);
     document.body.style.fontSize = fontSize;
-  }, [settings.fontSize]);
+  }, [settings.fontSize, mounted]);
 
   const setTheme = (theme: ThemeMode) => {
     updateSettings({ theme });
