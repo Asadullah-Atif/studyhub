@@ -19,19 +19,13 @@ export function AppInitializer({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (isDemoMode) {
-      console.log('Demo mode detected, initializing store');
       initialize('demo-user');
     } else if (user && !initialized) {
-      console.log('User authenticated, initializing store');
       initialize(user.id);
-    } else if (!isDemoMode && !user) {
-      console.log('Not in demo mode and no user, redirecting to login');
-      router.push('/login');
     }
   }, [user, initialized, initialize, isDemoMode]);
 
   if (!isClient || authLoading) {
-    console.log('Loading UI: isClient:', isClient, 'authLoading:', authLoading);
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
         <div className="text-center">
@@ -43,7 +37,7 @@ export function AppInitializer({ children }: { children: React.ReactNode }) {
   }
 
   if (!isDemoMode && !user) {
-    console.log('Redirecting to login');
+    router.push('/login');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
         <div className="text-center">
