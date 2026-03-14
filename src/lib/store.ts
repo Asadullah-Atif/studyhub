@@ -155,24 +155,7 @@ export const useStore = create<AppState>()((set, get) => ({
     }
     
     try {
-    const [
-      { data: subjects },
-      { data: exams },
-      { data: studySessions },
-      { data: tasks },
-      { data: pomodoroSessions },
-      { data: grades },
-      { data: flashcardDecks },
-      { data: notes },
-      { data: habits },
-      { data: resources },
-      { data: goals },
-      { data: sleepLogs },
-      { data: timetable },
-      { data: chatHistory },
-      { data: activities },
-      { data: settings }
-    ] = await Promise.all([
+    const results = await Promise.allSettled([
       getSupabase().from('subjects').select('*').eq('user_id', userId),
       getSupabase().from('exams').select('*').eq('user_id', userId),
       getSupabase().from('study_sessions').select('*').eq('user_id', userId),
@@ -190,6 +173,28 @@ export const useStore = create<AppState>()((set, get) => ({
       getSupabase().from('activities').select('*').eq('user_id', userId).order('timestamp', { ascending: false }).limit(50),
       getSupabase().from('settings').select('*').eq('user_id', userId).single(),
     ]);
+
+    const getData = (index: number) => {
+      const result = results[index];
+      return result.status === 'fulfilled' ? result.value.data : null;
+    };
+
+    const subjects = getData(0);
+    const exams = getData(1);
+    const studySessions = getData(2);
+    const tasks = getData(3);
+    const pomodoroSessions = getData(4);
+    const grades = getData(5);
+    const flashcardDecks = getData(6);
+    const notes = getData(7);
+    const habits = getData(8);
+    const resources = getData(9);
+    const goals = getData(10);
+    const sleepLogs = getData(11);
+    const timetable = getData(12);
+    const chatHistory = getData(13);
+    const activities = getData(14);
+    const settings = getData(15);
 
     set({
       subjects: (subjects || []).map((s: any) => ({
